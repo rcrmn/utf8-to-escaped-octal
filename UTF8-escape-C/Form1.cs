@@ -13,6 +13,12 @@ namespace UTF8_escape_C
 {
     public partial class Form1 : Form
     {
+        enum OutputType
+        {
+            Octal,
+            Hex
+        }
+
         public Form1()
         {
             InitializeComponent();
@@ -32,6 +38,17 @@ namespace UTF8_escape_C
 
         void Form1_DragDrop(object sender, DragEventArgs e)
         {
+            OutputType ot = OutputType.Octal;
+
+            if (this.octalRadioButton.Checked)
+            {
+                ot = OutputType.Octal;
+            }
+            else if (this.hexRadioButton.Checked)
+            {
+                ot = OutputType.Hex;
+            }
+
             string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
             foreach (string filePath in files)
             {
@@ -59,6 +76,7 @@ namespace UTF8_escape_C
                 }
 
                 StreamWriter outWriter = new StreamWriter(outPath);
+                StringBuilder sb = new StringBuilder();
                 while (true)
                 {
                     Int32 c = inStream.ReadByte();
@@ -69,15 +87,27 @@ namespace UTF8_escape_C
 
                     if (c > 127)
                     {
-                        string oct = System.Convert.ToString(c, 8);
-                        oct = oct.PadLeft(3, '0');
-                        outWriter.Write("\\" + oct);
+                        string ec;
+                        //oct = oct.PadLeft(3, '0');
+                        switch(ot)
+                        {
+                            case OutputType.Hex:
+                                ec = "\\u" + ((int)c).ToString("x4");
+                                break;
+
+                            case OutputType.Octal:
+                            default:
+                                ec = "\\0" + System.Convert.ToString(c, 8);
+                                break;
+                        }
+                        sb.Append(ec);
                     }
                     else
                     {
-                        outWriter.Write((char)c);
+                        sb.Append((char)c);
                     }
                 }
+                outWriter.Write(sb.ToString());
                 inStream.Close();
                 outWriter.Close();
             }
